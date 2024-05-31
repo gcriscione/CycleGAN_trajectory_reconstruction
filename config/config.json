@@ -1,0 +1,133 @@
+{
+    "general": {
+        "show_plots": false,
+        "save_plots": true,
+        "mode": "train",
+        "data_path": "./data"
+    },
+    "training": {
+        "img_size": 28,
+        "training_size": 1000,
+        "validation_size": 200,
+        "test_size": 200,
+        "seed": 50,
+        "batch_size": 1,
+        "num_epochs": 8,
+        "generator_learning_rate": 0.0001,
+        "discriminator_learning_rate": 0.0001,
+        "beta1": 0.5,
+        "beta2": 0.999,
+        "lambda_cycle": 10.0,
+        "lambda_identity": 5.0,
+        "loss_function": "BCE",
+        "optimizer": "Adam",
+        "gradient_clipping": true
+    },
+    "generator": {
+        "input_dim": [28, 28, 1],
+        "layers": [
+            {
+                "type": "conv",
+                "out_channels": 64,
+                "kernel_size": 7,
+                "stride": 1,
+                "activation": "ReLU",
+                "batch_norm": true,
+                "dropout": 0.3
+            },
+            {
+                "type": "residual_block",
+                "out_channels": 64,
+                "kernel_size": 3,
+                "num_blocks": 8,
+                "batch_norm": true,
+                "dropout": 0.3
+            },
+            {
+                "type": "conv_transpose",
+                "out_channels": 64,
+                "kernel_size": 4,
+                "stride": 2,
+                "activation": "ReLU",
+                "batch_norm": true,
+                "dropout": 0.3
+            },
+            {
+                "type": "residual_block",
+                "out_channels": 32,
+                "kernel_size": 3,
+                "num_blocks": 4,
+                "batch_norm": true,
+                "dropout": 0.3
+            },
+            {
+                "type": "conv_transpose",
+                "out_channels": 32,
+                "kernel_size": 4,
+                "stride": 2,
+                "activation": "ReLU",
+                "batch_norm": true,
+                "dropout": 0.3
+            },
+            {
+                "type": "conv",
+                "out_channels": 1,
+                "kernel_size": 3,
+                "stride": 1,
+                "activation": "Sigmoid",
+                "batch_norm": false
+            }
+        ]
+    },
+    "discriminator": {
+        "input_channels": 1,
+        "layers": [
+            {
+                "type": "conv",
+                "out_channels": 64,
+                "kernel_size": 4,
+                "stride": 2,
+                "activation": "LeakyReLU",
+                "batch_norm": true,
+                "dropout": 0.5
+            },
+            {
+                "type": "residual_block",
+                "out_channels": 64,
+                "kernel_size": 3,
+                "num_blocks": 4,
+                "batch_norm": true
+            },
+            {
+                "type": "conv",
+                "out_channels": 128,
+                "kernel_size": 4,
+                "stride": 2,
+                "activation": "LeakyReLU",
+                "batch_norm": true,
+                "dropout": 0.5
+            },
+            {
+                "type": "residual_block",
+                "out_channels": 128,
+                "kernel_size": 3,
+                "num_blocks": 2,
+                "batch_norm": true
+            },
+            {
+                "type": "conv",
+                "out_channels": 1,
+                "kernel_size": 3,
+                "stride": 1,
+                "activation": "Sigmoid",
+                "batch_norm": false
+            }
+        ]
+    },
+    "noise_adder": {
+        "noise_type": "salt_and_pepper",
+        "salt_pepper_ratio": 0.2,
+        "gaussian_mean": 0,
+        "gaussian_std": 0.02
+    }
+}

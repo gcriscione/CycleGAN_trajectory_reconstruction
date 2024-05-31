@@ -1,0 +1,19 @@
+// virtual environment
+.venv
+
+// note
+note.txt
+
+// VS code settings
+.vscode
+
+// dataset
+data/MNIST
+data/domain1
+
+// python cache
+__pycache__/
+
+// result
+result/
+results_collection/

@@ -1,72 +1,80 @@
-import tensorflow as tf
+import os
 import numpy as np
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
 
-class MNISTDataLoader:
+
+IMAGE_RESIZE = (128, 128, 1)
+
+
+class ImageDataLoader:
     def __init__(self, config):
         self.config = config
+        self.dataset_path = config['general'].get('dataset_path', "./data/domain1")
         self.training_size = config['training'].get('training_size', None)
         self.validation_size = config['training'].get('validation_size', None)
         self.test_size = config['training'].get('test_size', None)
-        self.img_size = config['training'].get('img_size', 28)
-        self.num_classes = 10  # Number of digit classes (0-9)
-        
-        # Load dataset once
-        (self.x_train, self.y_train), (self.x_test, self.y_test) = tf.keras.datasets.mnist.load_data()
-        self.x_train = self.x_train.astype('float32') / 255.0
-        self.x_train = self.x_train[..., tf.newaxis]  # Add a channel dimension
-        self.x_test = self.x_test.astype('float32') / 255.0
-        self.x_test = self.x_test[..., tf.newaxis]  # Add a channel dimension
-        
-        # Split validation data from training data
-        self.x_val = self.x_train[:self.validation_size]
-        self.y_val = self.y_train[:self.validation_size]
-        self.x_train = self.x_train[self.validation_size:]
-        self.y_train = self.y_train[self.validation_size:]
+        self.normalization = config['preprocessing'].get('normalization', False)
+        self.standardization = config['preprocessing'].get('standardization', False)
+        self.data_augmentation = config['preprocessing'].get('data_augmentation', False)
 
-    def _balance_dataset(self, x, y, size_per_class):
-        x_balanced = []
-        y_balanced = []
-        for digit in range(self.num_classes):
-            mask = y == digit
-            x_digit = x[mask]
-            y_digit = y[mask]
-            x_balanced.append(x_digit[:size_per_class])
-            y_balanced.append(y_digit[:size_per_class])
-        
-        x_balanced = np.concatenate(x_balanced)
-        y_balanced = np.concatenate(y_balanced)
-        
-        return x_balanced, y_balanced
+        # Load and preprocess dataset
+        self.images = self._load_images(self.dataset_path)
+        self.images = self._preprocess_images(self.images)
+
+        # Split dataset into train, validation, and test sets
+        self.x_train, self.x_temp = train_test_split(self.images, test_size=self.validation_size + self.test_size)
+        self.x_val, self.x_test = train_test_split(self.x_temp, test_size=self.test_size)
+
+    def _load_images(self, folder):
+        images = []
+        for filename in os.listdir(folder):
+            if filename.endswith(".png"):
+                img_path = os.path.join(folder, filename)
+                img = tf.keras.preprocessing.image.load_img(img_path, color_mode='grayscale')
+                img = tf.keras.preprocessing.image.img_to_array(img)
+                img = tf.image.resize(img, IMAGE_RESIZE[:2], method=tf.image.ResizeMethod.BILINEAR, antialias=True)
+                if img.shape != IMAGE_RESIZE:
+                    print(f"Shape mismatch for {img_path}: got {img.shape}, expected: {IMAGE_RESIZE}")
+                images.append(img)
+
+        return np.array(images)
+
+    def _preprocess_images(self, images):
+        images = images.astype('float32') / 255.0
+
+        # normalization [-1, 1]
+        if (self.normalization):
+            images = (images - 0.5) * 2
+
+        # standardization
+        if (self.standardization):
+            mean = np.mean(images, axis=(0, 1, 2))
+            std = np.std(images, axis=(0, 1, 2))
+            images = (images - mean) / std
+
+        # Data Augmentation
+        if (self.data_augmentation):
+            images = tf.image.random_flip_left_right(images)
+            images = tf.image.random_flip_up_down(images)
+            images = tf.image.random_brightness(images, max_delta=0.1)
+            images = tf.image.random_contrast(images, lower=0.9, upper=1.1)
+            images = tf.image.random_hue(images, max_delta=0.05)
+            images = tf.image.random_saturation(images, lower=0.95, upper=1.05)
+
+        return images
 
     def get_train_data(self):
-        if self.training_size is not None:
-            size_per_class = self.training_size // self.num_classes
-            x_train, y_train = self._balance_dataset(self.x_train, self.y_train, size_per_class)
-        else:
-            x_train, y_train = self.x_train, self.y_train
-
-        train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-        train_dataset = train_dataset.shuffle(len(y_train)).batch(self.config['training']['batch_size']).prefetch(tf.data.experimental.AUTOTUNE)
+        train_dataset = tf.data.Dataset.from_tensor_slices(self.x_train)
+        train_dataset = train_dataset.shuffle(len(self.x_train)).batch(self.config['training']['batch_size']).prefetch(tf.data.experimental.AUTOTUNE)
         return train_dataset
     
     def get_validation_data(self):
-        if self.validation_size is not None:
-            size_per_class = self.validation_size // self.num_classes
-            x_val, y_val = self._balance_dataset(self.x_val, self.y_val, size_per_class)
-        else:
-            x_val, y_val = self.x_val, self.y_val
-        
-        validation_dataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
+        validation_dataset = tf.data.Dataset.from_tensor_slices(self.x_val)
         validation_dataset = validation_dataset.batch(self.config['training']['batch_size']).prefetch(tf.data.experimental.AUTOTUNE)
         return validation_dataset
     
     def get_test_data(self):
-        if self.test_size is not None:
-            size_per_class = self.test_size // self.num_classes
-            x_test, y_test = self._balance_dataset(self.x_test, self.y_test, size_per_class)
-        else:
-            x_test, y_test = self.x_test, self.y_test
-        
-        test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+        test_dataset = tf.data.Dataset.from_tensor_slices(self.x_test)
         test_dataset = test_dataset.batch(self.config['training']['batch_size']).prefetch(tf.data.experimental.AUTOTUNE)
         return test_dataset

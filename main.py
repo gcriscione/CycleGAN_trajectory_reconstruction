@@ -1,5 +1,4 @@
 import os
-from data.download_mist import download_mnist
 from train import train
 
 # create directories for results
@@ -23,14 +22,9 @@ def create_result_directories(result_path):
 
 
 if __name__ == "__main__":
-    data_path = './data'
     result_path = './result'
-
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
 
     if not os.path.exists(result_path):
         create_result_directories(result_path)
 
-    download_mnist(data_path)
     train()

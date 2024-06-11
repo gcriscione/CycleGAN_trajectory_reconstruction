@@ -3,7 +3,22 @@
         "show_plots": false,
         "save_plots": true,
         "mode": "train",
-        "data_path": "./data"
+        "dataset_path": "./data/domain1"
+    },
+    "preprocessing": {
+        "normalization": false,
+        "standardization": false,
+        "data_augmentation": false
+    },
+    "noise_adder": {
+        "noise_type": "line_segments",
+        "salt_pepper_ratio": 0.2,
+        "gaussian_mean": 0,
+        "gaussian_std": 0.02,
+        "line_segment_params": {
+            "line_count": 5,
+            "line_thickness": 2
+        }
     },
     "training": {
         "img_size": 28,
@@ -123,11 +138,5 @@
                 "batch_norm": false
             }
         ]
-    },
-    "noise_adder": {
-        "noise_type": "salt_and_pepper",
-        "salt_pepper_ratio": 0.2,
-        "gaussian_mean": 0,
-        "gaussian_std": 0.02
     }
 }

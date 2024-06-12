@@ -1,4 +1,4 @@
-from .dataset import MNISTDataLoader
+from .dataset import ImageDataLoader
 from .noise import NoiseAdder
 from .plot import plot_images
 from .stats import stats

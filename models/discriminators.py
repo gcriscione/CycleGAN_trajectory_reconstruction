@@ -101,7 +101,7 @@ class Discriminator(tf.keras.Model):
         return self.model(inputs)
     
     def __str__(self):
-        self.model.build(input_shape=(None, 28, 28, 1))
+        self.model.build(input_shape=(None, 128, 128, 1))
         with io.StringIO() as buf, redirect_stdout(buf):
             self.model.summary()
             model_summary = buf.getvalue()

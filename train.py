@@ -2,7 +2,7 @@ import tensorflow as tf
 import logging
 import json
 from models import Generator, Discriminator, Losses
-from utils import MNISTDataLoader, NoiseAdder, plot_images, stats, create_checkpoint_manager, validate_model, test_model
+from utils import ImageDataLoader, NoiseAdder, plot_images, stats, create_checkpoint_manager, validate_model, test_model
 from config.config_file import config
 
 CONFIGURATION_FILE = "result/setup/config.json"
@@ -62,7 +62,7 @@ def initialize_components(config):
 
 # Perform training for one epoch
 def train_one_epoch(epoch, train_loader, G1, G2, D1, D2, optimizer_G1, optimizer_G2, optimizer_D1, optimizer_D2, noise_adder, losses):
-    for i, (images, _) in enumerate(train_loader):
+    for i, images in enumerate(train_loader):
         noisy_images = noise_adder.add_noise(images)
 
         # Ensure images have 4 dimensions
@@ -97,8 +97,12 @@ def train_one_epoch(epoch, train_loader, G1, G2, D1, D2, optimizer_G1, optimizer
             identity_loss_G1 = losses.identity_loss(images, G1(images, training=True))
             identity_loss_G2 = losses.identity_loss(noisy_images, G2(noisy_images, training=True))
 
-            total_loss_G1 = loss_G1 + loss_cycle_G1 + identity_loss_G1
-            total_loss_G2 = loss_G2 + loss_cycle_G2 + identity_loss_G2
+            # Line segment loss
+            line_segment_loss_G1 = losses.line_segment_loss(images, fake_images_G2)
+            line_segment_loss_G2 = losses.line_segment_loss(noisy_images, fake_images_G1)
+
+            total_loss_G1 = loss_G1 + loss_cycle_G1 + identity_loss_G1 + line_segment_loss_G1
+            total_loss_G2 = loss_G2 + loss_cycle_G2 + identity_loss_G2 + line_segment_loss_G2
 
         gradients_D1 = tape_D1.gradient(loss_D1, D1.trainable_variables)
         gradients_D2 = tape_D2.gradient(loss_D2, D2.trainable_variables)
@@ -120,7 +124,7 @@ def train_one_epoch(epoch, train_loader, G1, G2, D1, D2, optimizer_G1, optimizer
 def train():
     enable_memory_growth()
     
-    data_loader = MNISTDataLoader(config)
+    data_loader = ImageDataLoader(config)
     train_loader = data_loader.get_train_data()
     val_loader = data_loader.get_validation_data()
     test_loader = data_loader.get_test_data()

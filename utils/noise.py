@@ -75,30 +75,38 @@ class NoiseAdder:
 
         for img in noisy_images:
             for _ in range(line_count):
-                x1, y1 = random.randint(0, img.shape[1]), random.randint(0, img.shape[0])
-                x2, y2 = random.randint(0, img.shape[1]), random.randint(0, img.shape[0])
-                img = self._draw_line(img, (x1, y1), (x2, y2), (0, 0, 0, 1), line_thickness)
+                x1, y1 = random.randint(0, img.shape[1] - 1), random.randint(0, img.shape[0] - 1)
+                x2, y2 = random.randint(0, img.shape[1] - 1), random.randint(0, img.shape[0] - 1)
+                img = self._draw_line(img, (x1, y1), (x2, y2), 0, line_thickness)  # Use 0 for black color in grayscale
 
         return tf.convert_to_tensor(noisy_images)
     
     # Helper function to draw a line on an image.
     def _draw_line(self, img, start, end, color, thickness):
-        img = ((img + 1) * 127.5).astype(np.uint8).copy()
-        
         x1, y1 = start
         x2, y2 = end
 
-        length = int(np.hypot(x2 - x1, y2 - y1))
-        dx = (x2 - x1) / length
-        dy = (y2 - y1) / length
+        # Bresenham's line algorithm
+        dx = abs(x2 - x1)
+        dy = abs(y2 - y1)
+        sx = 1 if x1 < x2 else -1
+        sy = 1 if y1 < y2 else -1
+        err = dx - dy
 
-        for i in range(length):
-            x = int(x1 + dx * i)
-            y = int(y1 + dy * i)
-            for t in range(-thickness // 2, thickness // 2):
-                for s in range(-thickness // 2, thickness // 2):
-                    if 0 <= x + t < img.shape[1] and 0 <= y + s < img.shape[0]:
-                        img[y + s, x + t] = color
+        while True:
+            if 0 <= x1 < img.shape[1] and 0 <= y1 < img.shape[0]:
+                for t in range(-thickness // 2 + 1, thickness // 2 + 1):
+                    if 0 <= y1 + t < img.shape[0] and 0 <= x1 + t < img.shape[1]:
+                        img[y1 + t, x1 + t] = color
 
-        img = (img / 127.5) - 1
+            if x1 == x2 and y1 == y2:
+                break
+            e2 = err * 2
+            if e2 > -dy:
+                err -= dy
+                x1 += sx
+            if e2 < dx:
+                err += dx
+                y1 += sy
+
         return img

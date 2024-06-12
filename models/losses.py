@@ -4,6 +4,7 @@ class Losses:
     def __init__(self, config):
         loss_type = config['training']['loss_function']
         self.lambda_cycle = config['training']['lambda_cycle']
+        self.lambda_identity = config['training'].get('lambda_identity', 0.5 * self.lambda_cycle)
         
         if loss_type == 'MSE':
             self.adversarial_loss = tf.keras.losses.MeanSquaredError()
@@ -12,13 +13,11 @@ class Losses:
         else:
             raise ValueError(f"Unsupported loss type: {loss_type}")
 
-        self.cycle_loss = tf.keras.losses.MeanAbsoluteError()
+        self.cycle_loss_fn = tf.keras.losses.MeanAbsoluteError()
         self.identity_loss_fn = tf.keras.losses.MeanAbsoluteError()
 
     def generator_loss(self, fake_output):
-        adversarial_loss = self.adversarial_loss(tf.ones_like(fake_output), fake_output)
-        mse_loss = tf.keras.losses.MeanSquaredError()(tf.ones_like(fake_output), fake_output)
-        return adversarial_loss + mse_loss
+        return self.adversarial_loss(tf.ones_like(fake_output), fake_output)
 
     def discriminator_loss(self, real_output, fake_output):
         real_loss = self.adversarial_loss(tf.ones_like(real_output), real_output)
@@ -38,7 +37,7 @@ class Losses:
 
         if real_image.shape[1:3] != reconstructed_image.shape[1:3]:
             real_image = tf.image.resize(real_image, reconstructed_image.shape[1:3])
-        return self.lambda_cycle * self.cycle_loss(real_image, reconstructed_image)
+        return self.lambda_cycle * self.cycle_loss_fn(real_image, reconstructed_image)
     
     def identity_loss(self, real_image, same_image):
         if len(real_image.shape) != 4:
@@ -51,4 +50,12 @@ class Losses:
 
         if real_image.shape[1:3] != same_image.shape[1:3]:
             real_image = tf.image.resize(real_image, same_image.shape[1:3])
-        return self.identity_loss_fn(real_image, same_image)
+        return self.lambda_identity * self.identity_loss_fn(real_image, same_image)
+
+    def line_segment_loss(self, real_image, generated_image):
+        if real_image.shape != generated_image.shape:
+            print(f"Shape mismatch: real_image shape {real_image.shape}, generated_image shape {generated_image.shape}")
+            generated_image = tf.image.resize(generated_image, real_image.shape[1:3])
+        real_image_lines = tf.where(real_image < -0.5, tf.ones_like(real_image), tf.zeros_like(real_image))
+        generated_image_lines = tf.where(generated_image < -0.5, tf.ones_like(generated_image), tf.zeros_like(generated_image))
+        return tf.reduce_mean(tf.abs(real_image_lines - generated_image_lines))

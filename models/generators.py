@@ -102,11 +102,12 @@ class Generator(tf.keras.Model):
 
     def call(self, inputs, training=None):
         output = self.model(inputs)
-        output = tf.image.resize(output, [28, 28])
+        # Uncomment the line below if resizing is necessary
+        # output = tf.image.resize(output, [desired_height, desired_width])
         return output
 
     def __str__(self):
-        self.model.build(input_shape=(None, 28, 28, 1))
+        self.model.build(input_shape=(None, 128, 128, 1))
         with io.StringIO() as buf, redirect_stdout(buf):
             self.model.summary()
             model_summary = buf.getvalue()

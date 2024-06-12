@@ -2,10 +2,12 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+from PIL import UnidentifiedImageError, Image
+
+
 
 
 IMAGE_RESIZE = (128, 128, 1)
-
 
 class ImageDataLoader:
     def __init__(self, config):
@@ -29,15 +31,18 @@ class ImageDataLoader:
     def _load_images(self, folder):
         images = []
         for filename in os.listdir(folder):
-            if filename.endswith(".png"):
+            if filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_path = os.path.join(folder, filename)
-                img = tf.keras.preprocessing.image.load_img(img_path, color_mode='grayscale')
-                img = tf.keras.preprocessing.image.img_to_array(img)
-                img = tf.image.resize(img, IMAGE_RESIZE[:2], method=tf.image.ResizeMethod.BILINEAR, antialias=True)
-                if img.shape != IMAGE_RESIZE:
-                    print(f"Shape mismatch for {img_path}: got {img.shape}, expected: {IMAGE_RESIZE}")
-                images.append(img)
-
+                img_path = os.path.normpath(img_path)
+                try:
+                    img = tf.keras.preprocessing.image.load_img(img_path, color_mode='grayscale')
+                    img = tf.keras.preprocessing.image.img_to_array(img)
+                    img = tf.image.resize(img, IMAGE_RESIZE[:2], method=tf.image.ResizeMethod.BILINEAR, antialias=True)
+                    if img.shape != IMAGE_RESIZE:
+                        print(f"Shape mismatch for {img_path}: got {img.shape}, expected: {IMAGE_RESIZE}")
+                    images.append(img)
+                except (UnidentifiedImageError, OSError, ValueError) as e:
+                    print(f"Cannot process image file {img_path}: {e}")
         return np.array(images)
 
     def _preprocess_images(self, images):

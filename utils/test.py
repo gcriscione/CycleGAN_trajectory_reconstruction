@@ -6,7 +6,7 @@ def test_model(generator, noise_adder, test_data, logger):
     total_loss = 0
     batch_count = 0
 
-    for i, (images, _) in enumerate(test_data):
+    for i, images in enumerate(test_data):
         noisy_images = noise_adder.add_noise(images)
 
         if len(images.shape) == 3:

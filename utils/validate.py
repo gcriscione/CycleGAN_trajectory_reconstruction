@@ -6,7 +6,7 @@ def validate_model(epoch, generator1, generator2, noise_adder, val_loader, losse
     total_loss_G = 0
     batch_count = 0
 
-    for i, (images, _) in enumerate(val_loader):
+    for i, images in enumerate(val_loader):
         noisy_images = noise_adder.add_noise(images)
 
         if len(images.shape) == 3:

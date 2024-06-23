@@ -16,14 +16,14 @@
         "gaussian_mean": 0,
         "gaussian_std": 0.02,
         "line_segment_params": {
-            "line_count": 5,
-            "line_thickness": 2
+            "line_count": 12,
+            "line_thickness": 5
         }
     },
     "training": {
-        "training_size": 10,
-        "validation_size": 2,
-        "test_size": 2,
+        "training_size": 1000,
+        "validation_size": 200,
+        "test_size": 200,
         "seed": 50,
         "batch_size": 1,
         "num_epochs": 8,
@@ -71,7 +71,7 @@
                 "type": "residual_block",
                 "out_channels": 256,
                 "kernel_size": 3,
-                "num_blocks": 9,
+                "num_blocks": 6,
                 "batch_norm": true,
                 "dropout": 0.3
             },
@@ -108,6 +108,15 @@
         "layers": [
             {
                 "type": "conv",
+                "out_channels": 32,
+                "kernel_size": 4,
+                "stride": 2,
+                "activation": "LeakyReLU",
+                "batch_norm": true,
+                "dropout": 0.3
+            },
+            {
+                "type": "conv",
                 "out_channels": 64,
                 "kernel_size": 4,
                 "stride": 2,
@@ -118,24 +127,6 @@
             {
                 "type": "conv",
                 "out_channels": 128,
-                "kernel_size": 4,
-                "stride": 2,
-                "activation": "LeakyReLU",
-                "batch_norm": true,
-                "dropout": 0.3
-            },
-            {
-                "type": "conv",
-                "out_channels": 256,
-                "kernel_size": 4,
-                "stride": 2,
-                "activation": "LeakyReLU",
-                "batch_norm": true,
-                "dropout": 0.3
-            },
-            {
-                "type": "conv",
-                "out_channels": 512,
                 "kernel_size": 4,
                 "stride": 2,
                 "activation": "LeakyReLU",
